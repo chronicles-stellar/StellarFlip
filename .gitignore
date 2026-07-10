@@ -1,0 +1,17 @@
+node_modules
+.pnpm-store
+.next
+out
+coverage
+.env
+.env.local
+.env.*.local
+.DS_Store
+*.log
+.turbo
+frontend/.next
+frontend/out
+docs/.next
+docs/out
+contracts/target
+contracts/.soroban

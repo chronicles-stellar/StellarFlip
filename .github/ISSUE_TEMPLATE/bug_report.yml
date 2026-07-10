@@ -1,0 +1,49 @@
+name: Bug report
+description: Report a bug in gameplay, wallet flow, or contract integration
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve Stellar Flip.
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Affected area
+      options:
+        - Frontend gameplay
+        - Wallet integration
+        - NFT inventory
+        - Leaderboard contract
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Include the expected result and the actual result.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Connect wallet
+        2. Start daily challenge
+        3. Submit score
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: Linux / testnet / Chrome / Freighter version
+  - type: textarea
+    id: notes
+    attributes:
+      label: Logs or screenshots
+      description: Paste errors, screenshots, or console output if available.

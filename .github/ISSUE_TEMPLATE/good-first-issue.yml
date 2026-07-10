@@ -1,0 +1,33 @@
+name: Good first issue
+description: Track an approachable task for new contributors
+title: "[Good First Issue]: "
+labels:
+  - good first issue
+  - grantfox
+body:
+  - type: input
+    id: goal
+    attributes:
+      label: Task title
+      placeholder: Add sound effect volume slider
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Why this matters
+      description: Explain the user or contributor value.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope of work
+      description: Keep the task focused and well-bounded.
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: Relevant files or references
+      description: Link to components, pages, or contracts that help a contributor start quickly.

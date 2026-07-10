@@ -1,0 +1,12 @@
+[workspace]
+members = ["card-nft", "leaderboard"]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/your-org/stellar-flip"
+version = "0.1.0"
+
+[workspace.dependencies]
+soroban-sdk = { version = "=22.0.11", features = ["alloc"] }
