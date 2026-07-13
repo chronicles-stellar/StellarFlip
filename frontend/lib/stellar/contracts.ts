@@ -15,13 +15,17 @@ async function getFreighter() {
   return (await import("@stellar/freighter-api")) as any;
 }
 
-function convertArg(sdk: any, value: string | number, type: "address" | "symbol" | "u32") {
+function convertArg(sdk: any, value: string | number, type: "address" | "symbol" | "u32" | "string") {
   if (type === "address") {
     return sdk.Address.fromString(value).toScVal();
   }
 
   if (type === "symbol") {
     return sdk.nativeToScVal(value, { type: "symbol" });
+  }
+
+  if (type === "string") {
+    return sdk.nativeToScVal(value, { type: "string" });
   }
 
   return sdk.nativeToScVal(value, { type: "u32" });
@@ -36,7 +40,7 @@ async function invokeContract<T>({
 }: {
   contractId: string;
   method: string;
-  args: Array<{ value: string | number; type: "address" | "symbol" | "u32" }>;
+  args: Array<{ value: string | number; type: "address" | "symbol" | "u32" | "string" }>;
   source: string;
   sign: boolean;
 }): Promise<T> {
@@ -154,6 +158,7 @@ export async function fetchOwnedCards(address: string): Promise<InventoryCard[]>
 export async function submitLeaderboardScore(
   address: string,
   input: {
+    playerName: string;
     difficulty: Difficulty;
     score: number;
     moves: number;
@@ -168,6 +173,7 @@ export async function submitLeaderboardScore(
     method: "submit_score",
     args: [
       { value: address, type: "address" },
+      { value: input.playerName, type: "string" },
       { value: input.difficulty, type: "symbol" },
       { value: input.score, type: "u32" },
       { value: input.moves, type: "u32" },

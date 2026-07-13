@@ -1,0 +1,88 @@
+# Dependency Security Audit
+#
+# Runs `pnpm audit` on every pull request that touches package manifests and on
+# a daily schedule so newly disclosed CVEs are caught even without code changes.
+#
+# The job fails (and therefore blocks merge) when pnpm audit finds any
+# vulnerability at the "moderate" severity level or above.  Adjust
+# `--audit-level` if the project needs a stricter or more lenient bar.
+
+name: Dependency Audit
+
+on:
+  pull_request:
+    # Only re-run audit when dependency manifests change.
+    paths:
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "frontend/package.json"
+      - "docs/package.json"
+  push:
+    branches:
+      - main
+    paths:
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "frontend/package.json"
+      - "docs/package.json"
+  # Daily audit at 06:00 UTC so newly published CVEs are caught automatically.
+  schedule:
+    - cron: "0 6 * * *"
+  # Allow manual re-runs from the Actions UI.
+  workflow_dispatch:
+
+jobs:
+  audit:
+    name: pnpm audit
+    runs-on: ubuntu-latest
+    permissions:
+      # Read-only access is sufficient; no write permissions needed.
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          # Must match packageManager field in the root package.json.
+          version: "9.12.0"
+
+      - name: Install dependencies (frozen lockfile)
+        # --frozen-lockfile ensures the lockfile is not silently updated,
+        # keeping the audit results reproducible.
+        run: pnpm install --frozen-lockfile
+
+      - name: Run security audit
+        # Exit with a non-zero code when vulnerabilities at the specified
+        # level or higher are found, which blocks PR merges via branch
+        # protection rules.
+        #
+        # Severity levels (ascending): low | moderate | high | critical
+        # Change --audit-level to "high" to ignore moderate findings if
+        # required by policy.
+        run: pnpm audit --audit-level moderate
+
+      - name: Upload audit report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-report
+          # pnpm audit --json writes structured output that can be parsed by
+          # security dashboards.  Re-run with JSON flag to capture the report.
+          path: audit-report.json
+          retention-days: 14
+
+      # Separate step so the JSON report is always generated regardless of the
+      # audit exit code (the previous step already failed the job).
+      - name: Generate JSON audit report for upload
+        if: failure()
+        run: pnpm audit --json > audit-report.json || true

@@ -8,6 +8,7 @@ import { MemoryGame } from "@/components/memory-game";
 import { InventoryPanel } from "@/components/inventory-panel";
 import { useWallet } from "@/components/providers/wallet-provider";
 import { Difficulty, GameResult } from "@/lib/game/types";
+import { PLAYER_NAME_MAX_LENGTH, sanitizePlayerName, validatePlayerName } from "@/lib/game/sanitize";
 import { submitLeaderboardScore } from "@/lib/stellar/contracts";
 import { hasConfiguredContracts } from "@/lib/stellar/config";
 
@@ -16,6 +17,16 @@ export function GameShell() {
   const [latestResult, setLatestResult] = useState<GameResult | null>(null);
   const [submitStatus, setSubmitStatus] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  /** Raw value typed by the user — sanitized before use. */
+  const [playerNameRaw, setPlayerNameRaw] = useState("");
+  const [nameError, setNameError] = useState<string | null>(null);
+
+  function handleNameChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const sanitized = sanitizePlayerName(e.target.value);
+    setPlayerNameRaw(sanitized);
+    // Clear previous error as the user edits.
+    setNameError(null);
+  }
 
   async function handleSubmit(result: GameResult) {
     if (!wallet.address) {
@@ -28,11 +39,21 @@ export function GameShell() {
       return;
     }
 
+    // Sanitize once more at submission time (belt-and-suspenders).
+    const playerName = sanitizePlayerName(playerNameRaw);
+    const validationError = validatePlayerName(playerName);
+    if (validationError) {
+      setNameError(validationError);
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitStatus(null);
+    setNameError(null);
 
     try {
       await submitLeaderboardScore(wallet.address, {
+        playerName,
         difficulty: result.difficulty,
         score: result.score,
         moves: result.moves,
@@ -82,6 +103,33 @@ export function GameShell() {
                 <p className="text-sm text-slate-300">
                   {latestResult.difficulty === "easy" ? "Easy" : "Medium"} · {latestResult.moves} moves · {latestResult.elapsedSeconds}s
                 </p>
+
+                {/* Player name input — sanitized client-side before submission */}
+                <div className="space-y-1">
+                  <label htmlFor="player-name" className="block text-xs uppercase tracking-[0.2em] text-slate-400">
+                    Display name
+                  </label>
+                  <input
+                    id="player-name"
+                    type="text"
+                    value={playerNameRaw}
+                    onChange={handleNameChange}
+                    maxLength={PLAYER_NAME_MAX_LENGTH}
+                    placeholder="Pilot name…"
+                    aria-describedby={nameError ? "player-name-error" : undefined}
+                    aria-invalid={nameError !== null}
+                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-cyan-400/50 focus:outline-none focus:ring-1 focus:ring-cyan-400/30"
+                  />
+                  <p className="text-right text-[10px] text-slate-500">
+                    {playerNameRaw.length}/{PLAYER_NAME_MAX_LENGTH}
+                  </p>
+                  {nameError ? (
+                    <p id="player-name-error" role="alert" className="text-xs text-red-400">
+                      {nameError}
+                    </p>
+                  ) : null}
+                </div>
+
                 <button
                   type="button"
                   onClick={() => void handleSubmit(latestResult)}
